@@ -1,0 +1,63 @@
+name: Build OpenWrt for Archer C6 v2
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Install dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential clang flex bison g++ gawk gcc-multilib \
+        gettext git libncurses5-dev libssl-dev python3-distutils rsync unzip zlib1g-dev wget
+
+    - name: Clone OpenWrt
+      run: |
+        git clone https://github.com/openwrt/openwrt.git
+        cd openwrt
+        git checkout v24.10.2
+
+    - name: Update & install feeds
+      run: |
+        cd openwrt
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    - name: Configure for Archer C6 v2 (EU)
+      run: |
+        cd openwrt
+        cp ./targets/ath79-generic.config .config || true
+        echo "CONFIG_TARGET_ath79=y" >> .config
+        echo "CONFIG_TARGET_ath79_generic=y" >> .config
+        echo "CONFIG_TARGET_ath79_generic_DEVICE_tplink_archer-c6-v2-eu=y" >> .config
+        echo "CONFIG_PACKAGE_luci=y" >> .config
+        echo "CONFIG_PACKAGE_luci-app-mwan3=y" >> .config
+        echo "CONFIG_PACKAGE_mwan3=y" >> .config
+        echo "CONFIG_PACKAGE_ipv6helper=n" >> .config
+        echo "CONFIG_PACKAGE_ppp-mod-pptp=n" >> .config
+        echo "CONFIG_PACKAGE_wpad-basic-wolfssl=y" >> .config
+        echo "CONFIG_PACKAGE_wpad-mesh-openssl=n" >> .config
+        echo "CONFIG_IPV6=n" >> .config
+        make defconfig
+
+    - name: Download packages
+      run: |
+        cd openwrt
+        make download -j$(nproc)
+
+    - name: Build firmware
+      run: |
+        cd openwrt
+        make -j$(nproc) || make -j1 V=s
+
+    - name: Upload firmware
+      uses: actions/upload-artifact@v3
+      with:
+        name: openwrt-archer-c6
+        path: openwrt/bin/targets/ath79/generic/
