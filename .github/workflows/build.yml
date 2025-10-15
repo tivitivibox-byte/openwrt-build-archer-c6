@@ -29,7 +29,7 @@ jobs:
           sed -i 's/^CONFIG_TARGET_.*//g' .config
           echo "CONFIG_TARGET_ath79=y" >> .config
           echo "CONFIG_TARGET_ath79_generic=y" >> .config
-          echo "CONFIG_TARGET_ath79_generic_DEVICE_tplink_archer-c6-v2-eu=y" >> .config
+          echo "CONFIG_TARGET_ath79_generic_DEVICE_tplink_archer-c6-v2=y" >> .config
           echo "CONFIG_PACKAGE_luci=y" >> .config
           echo "CONFIG_PACKAGE_luci-app-mwan3=y" >> .config
           make defconfig
